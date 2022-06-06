@@ -1,0 +1,20 @@
+{
+  "name": "burrow-cash",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "codegen": "graph codegen ./subgraph.yaml",
+    "build": "graph build ./subgraph.yaml",
+    "deploy": "graph deploy --product hosted-service --node https://api.thegraph.com/deploy/ --ipfs https://api.thegraph.com/ipfs/ shashwats22/usdttoken ./subgraph.yaml --access-token"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.29.0",
+    "@graphprotocol/graph-ts": "^0.26.0"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.29.0",
+    "@graphprotocol/graph-ts": "^0.26.0",
+    "typescript": "^4.6.3"
+  }
+}

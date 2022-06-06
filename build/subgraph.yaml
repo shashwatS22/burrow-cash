@@ -1,0 +1,52 @@
+specVersion: 0.0.4
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: near
+    name: Main_Contract
+    network: near-mainnet
+    source:
+      account: contract.main.burrow.near
+      startBlock: 10662188
+    mapping:
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - RewardToken
+        - InterestRate
+        - LendingProtocol
+        - Deposit
+        - Withdraw
+        - Liquidate
+        - Repay
+        - Borrow
+      blockHandlers:
+        - handler: handleNewBlock
+      receiptHandlers:
+        - handler: handleReceipt
+      file: Main_Contract/Main_Contract.wasm
+  - kind: near
+    name: Token
+    network: near-mainnet
+    source:
+      account: token.burrow.near
+      startBlock: 10662188
+    mapping:
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - RewardToken
+        - InterestRate
+        - LendingProtocol
+        - Deposit
+        - Withdraw
+        - Liquidate
+        - Repay
+        - Borrow
+      blockHandlers:
+        - handler: handleNewBlock
+      receiptHandlers:
+        - handler: handleReceipt
+      file: Token/Token.wasm
