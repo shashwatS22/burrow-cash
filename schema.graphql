@@ -948,6 +948,7 @@ type Liquidate implements Event @entity {
 type Account @entity {
   " Address of the account "
   id: ID!
+  healthScore: BigInt
 }
 
 # Helper entity for calculating daily/hourly active users

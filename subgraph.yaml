@@ -7,7 +7,7 @@ dataSources:
     network: near-mainnet
     source:
       account: contract.main.burrow.near # This data source will monitor this account
-      startBlock: 10662188 # Required for NEAR
+      startBlock: 67038523 # Required for NEAR
     mapping:
       apiVersion: 0.0.5
       language: wasm/assemblyscript
@@ -21,32 +21,28 @@ dataSources:
         - Liquidate
         - Repay
         - Borrow
-      blockHandlers:
-        - handler: handleNewBlock # the function name in the mapping file
       receiptHandlers:
         - handler: handleReceipt # the function name in the mapping file
       file: ./src/mappings/main_contract_mappings.ts # link to the file wi
-  - kind: near
-    name: Token
-    network: near-mainnet
-    source:
-      account: token.burrow.near # This data source will monitor this account
-      startBlock: 10662188 # Required for NEAR
-    mapping:
-      apiVersion: 0.0.5
-      language: wasm/assemblyscript
-      entities:
-        - Token
-        - RewardToken
-        - InterestRate
-        - LendingProtocol
-        - Deposit
-        - Withdraw
-        - Liquidate
-        - Repay
-        - Borrow
-      blockHandlers:
-        - handler: handleNewBlock # the function name in the mapping file
-      receiptHandlers:
-        - handler: handleReceipt # the function name in the mapping file
-      file: ./src/mappings/token_mappings.ts
+  # - kind: near
+  #   name: Token
+  #   network: near-mainnet
+  #   source:
+  #     account: tmp-owner.main.burrow.near # This data source will monitor this account
+  #     startBlock: 62302891 # Required for NEAR
+  #   mapping:
+  #     apiVersion: 0.0.5
+  #     language: wasm/assemblyscript
+  #     entities:
+  #       - Token
+  #       - RewardToken
+  #       - InterestRate
+  #       - LendingProtocol
+  #       - Deposit
+  #       - Withdraw
+  #       - Liquidate
+  #       - Repay
+  #       - Borrow
+  #     receiptHandlers:
+  #       - handler: handleReceipt # the function name in the mapping file
+  #     file: ./src/mappings/controller_contract_mappings.ts
