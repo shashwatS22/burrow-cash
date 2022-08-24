@@ -1,7 +1,10 @@
 
-import { BigInt, log, near,json,JSONValue, BigDecimal } from "@graphprotocol/graph-ts";
+import { BigInt, log, near,json,JSONValue, BigDecimal, TypedMap } from "@graphprotocol/graph-ts";
 
 import { Borrow, Withdraw, Token, Market } from "../../generated/schema";
+import { handleBorrow, handleDecreaseCollateral, handleDeposit, handleDepositToReserve, handleForceClose, handleIncreaseCollateral, handleLiquidate, handleRepay, handleWithdraw } from "../common/exchange";
+import { getOrCreateMarket } from "../common/initializers";
+import { createOrEditTokensFromOracle } from "../common/token";
 // import { TokenData, TOKENS_CONTRACT_DATA } from "../common/constants";
 // import { ProtocolName, ProtocolType } from "../common/constants";
 // import { handleWithdraw } from "../common/exchange";
@@ -56,189 +59,92 @@ function handleFunctionCall(functionCallAction: near.FunctionCallAction, receipt
           let parsableData = outcomeLogs[logIndex].replace("EVENT_JSON:", "");
   
     let eventObject = json.try_fromString(parsableData).value .toObject();
-    const eventName = eventObject.get("event");
-    
-    if (eventName) {
-      log.warning("event {} ", [parsableData])
+    const eventName = eventObject.get("event") as JSONValue;
+        let eventData = eventObject.get("data") as JSONValue;
+
+    if (eventData) {
+      let eventArray: JSONValue[] = eventData.toArray()
+                
+
+      let data = eventArray[0].toObject();
+      handleEvents(functionCallAction, receipt, outcome, block, eventName, eventObject, logIndex, data);
+   
     }
-        }
-    // log.warning("outcomeStatus {}",[json.fromBytes( outcome.status.toValue()).toString()])
-    // log.warning("function call: {} ,outcome Id : {}, receipt id: {}",[functionCallAction.methodName,outcome.id.toBase58(),receipt.id.toBase58()])
-    // if (functionCallAction.methodName == "new") {
-        
-    //  }
-    // if (functionCallAction.methodName == "get_account") {
-        
-    //  }
-    // if (functionCallAction.methodName == "get_accounts_paged") { }
-    // if (functionCallAction.methodName == "execute") {
-        // log.warning("execute",[]);
-        // // if ((args.get("Withdraw") as JSONValue)) {
-        
-        //     let withdraw = new Withdraw(outcome.id.toBase58());
-        // withdraw.hash = outcome.id.toBase58();
-        // withdraw.timestamp = BigInt.fromU64(block.header.timestampNanosec);
-        //     withdraw.logIndex = withdrawLogIndex++;
-        //     withdraw.blockNumber = BigInt.fromU64(block.header.height);
-        // for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++){
-        //      let outcomeLogs = outcome.logs;
-        //     let parsableData= outcomeLogs[logIndex].replace("EVENT_JSON:", "");
-        //     log.warning("outcomelogs execute {} {} ", [logIndex.toString(),outcomeLogs[logIndex]]);
-        //     let jsonObject = json.try_fromString(parsableData).value.toObject();
-        //     let eventData = jsonObject.get("data");
-
-        //     if (eventData) {
-        //         let eventArray: JSONValue[] = eventData.toArray()
-                
-
-        //         let data = eventArray[0].toObject()
-        //         const amount=data.get('amount');
-        //         const tokenId=data.get('token_id');
-        //         const accountId = data.get('account_id');
-                
-        //         // log.warning("amount : {} ,tokenId : {}, accountId: {} ", [amount.toString(), tokenId.toString(), accountId.toString()]);
-            
-        //     }
-
-            
-        // }
-
-
-           
-
-
-            
-        // }
-        
-        // const actionsList = (args.get("actions") as JSONValue).toArray();
-    // }
-
-    // if (functionCallAction.methodName == "get_asset") { }
-    // if (functionCallAction.methodName == "get_assets") { }
-    // if (functionCallAction.methodName == "get_assets_paged") { }
-    // if (functionCallAction.methodName == "get_assets_paged_detailed") { }
-    // if (functionCallAction.methodName == "get_config") { }
-    // if (functionCallAction.methodName == "update_config") { }
-    // if (functionCallAction.methodName == "add_asset") { }
-    // if (functionCallAction.methodName == "update_asset") { }
-    // if (functionCallAction.methodName == "ft_on_transfer") { 
-    //     for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
-    //         let outcomeLogs = outcome.logs;
-    //         let parsableData = outcomeLogs[logIndex].replace("EVENT_JSON:", "");
-    //         log.warning("outcomelogs ft_on_transfer {} {} ", [logIndex.toString(),outcomeLogs[logIndex]]);
-    //     }
-    // }
-  //   if (functionCallAction.methodName == "oracle_on_call") {
-  //       log.warning("oracle_on_call", []);
-  //       for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
-  //           let outcomeLogs = outcome.logs;
-  //         let parsableData = outcomeLogs[logIndex].replace("EVENT_JSON:", "");
-  //         createOrEditTokensFromOracle(functionCallAction, receipt, outcome, block);
-
-  //       }
-  //    }
+    
+  }
   
-  //   if (functionCallAction.methodName == "after_ft_transfer") {
-  //     log.warning("after_ft_transfer", []);
-  //     for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
-        
-  //       let eventJsonString:string = outcome.logs[logIndex];
-  //       let parsableData: string = eventJsonString.replace("EVENT_JSON:", "");
-  //       let eventObject  : Object= JSON.parse(parsableData);
-  //       if (eventObject["event"] === "withdraw_succeeded") {
-        
-  //         handleWithdraw(functionCallAction, receipt, outcome, block,eventObject,logIndex);
+    if (functionCallAction.methodName == "update_config") { }
+  if (functionCallAction.methodName == "add_asset") { 
+    getOrCreateMarket(functionCallAction,receipt,outcome,block);
 
-  //       }
-  //       }
-  //    }
-    
-  //   // if (functionCallAction.methodName == "account_farm_claim_all") { }
-  //   // if (functionCallAction.methodName == "get_asset_farm") { }
-  //   // if (functionCallAction.methodName == "get_asset_farms") { }
-  //   // if (functionCallAction.methodName == "get_asset_farms_paged") { }
-  // if (functionCallAction.methodName == "add_asset_farm_reward") { 
       
-  //   }
-  //   // if (functionCallAction.methodName == "storage_deposit") { 
-  //   //     for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
-  //   //         let outcomeLogs = outcome.logs;
-  //   //         let parsableData = outcomeLogs[logIndex].replace("EVENT_JSON:", "");
-  //   //         log.warning("outcomelogs storage_deposit {} {} ", [logIndex.toString(),outcomeLogs[logIndex]]);
-  //   //     }
-  //   //     // let withdraw = new Withdraw();
-  //   // }
-  //   // if (functionCallAction.methodName == "storage_withdraw") { 
-  //   //     for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
-  //   //         let outcomeLogs = outcome.logs;
-  //   //         let parsableData = outcomeLogs[logIndex].replace("EVENT_JSON:", "");
-  //   //         log.warning("outcomelogs storage_withdrawl {} {} ", [logIndex.toString(),outcomeLogs[logIndex]]);
-  //   //     }
-  //   // }
-  //   // if (functionCallAction.methodName == "storage_unregister") { }
-  //   // if (functionCallAction.methodName == "storage_balance_bounds") { }
-  //   // if (functionCallAction.methodName == "storage_balance_of") { }
-    
+    }
+    if (functionCallAction.methodName == "oracle_on_call") {
+        log.warning("oracle_on_call", []);
+        for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
+
+          createOrEditTokensFromOracle(functionCallAction, receipt, outcome, block);
+
+        }
+     }
+  
+  if (functionCallAction.methodName == "add_asset_farm_reward") { 
+      
+    }
     
     
 }
 
 
+function handleEvents(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block,eventName:JSONValue,eventObject:Object,logIndex:number,eventData:TypedMap<string, JSONValue>): void {
+   switch (eventName.toString()) {
+      case "deposit":
+        {
+          
+          handleDeposit(
+           functionCallAction,  receipt,  outcome,  block,eventObject,logIndex,eventData);
+          break;
+        }
+      case "withdraw_succeeded": {
+        handleWithdraw(
+           functionCallAction,  receipt,  outcome,  block,eventObject,logIndex,eventData);
+      }
+      case "repay": {
+        handleRepay(
+          functionCallAction, receipt, outcome, block, eventObject, logIndex,eventData);
+        break;
+        
+      }
+         case "liquidate": {
+        handleLiquidate(
+          functionCallAction, receipt, outcome, block, eventObject, logIndex,eventData);
+        break;
+      }
+      case "borrow": {
+        handleBorrow(
+          functionCallAction, receipt, outcome, block, eventObject, logIndex,eventData);
+        break;
+        
+     }
+     case "deposit_to_reserve":{
+       handleDepositToReserve(functionCallAction, receipt, outcome, block, eventObject, logIndex,eventData);
+       break;
+       }
+     case "increase_collateral": { 
+       handleIncreaseCollateral(functionCallAction, receipt, outcome, block, eventObject, logIndex, eventData);
 
-function debugNEARLogs(
-  receipt: near.ActionReceipt,
-  outcome: near.ExecutionOutcome,
-  block: near.Block
-): void {
+       break;
+     }
+     case "decrease_collateral": { 
+       handleDecreaseCollateral(functionCallAction, receipt, outcome, block, eventObject, logIndex, eventData);
+       break;
+       }
+     case "force_close": { 
+       handleForceClose(functionCallAction, receipt, outcome, block, eventObject, logIndex, eventData);
+       break;
+       }
+       
+        
 
-  log.warning("****************** Receipt ID {} Start ***********************", [receipt.id.toBase58()]);
-
-  log.warning("Receipt data -> id: {}, predecessorId: {}, receiverId: {}, signerId: {}", [
-    receipt.id.toBase58(),
-    receipt.predecessorId,
-    receipt.receiverId,
-    receipt.signerId
-  ]);
-
-  let inputDataIdsArray : String[] = [];
-  let outputDataReceiversArray : String[] = [];
-  let logsArray = [];
-  let receiptIdsArray: String[] = [];
-  const actions = receipt.actions;
-  for (let i = 0; i < actions.length; i++) {
-    log.warning("Receipt actions: kind: {}, data: {}", [actions[i].kind.toString(), actions[i].data.toString()]);
-  }
-
-  const inputDataIds = receipt.inputDataIds;
-  for (let i = 0; i < inputDataIds.length; i++) {
-    inputDataIdsArray.push(inputDataIds[i].toBase58());
-  }
-
-  log.warning("Receipt input data ids array : {}", [inputDataIdsArray.join("|||||||||")]);
-
-  const outputDataReceivers = receipt.outputDataReceivers;
-  for (let i = 0; i < outputDataReceivers.length; i++) {
-    outputDataReceiversArray.push(outputDataReceiversArray[i]);
-  }
-
-    log.info("Receipt output data receiver id: {}", [outputDataReceiversArray.join("|||||||||")]);
-  log.warning("Outcome data -> blockHash: {}, id: {}, executorId: {}", [
-    outcome.blockHash.toBase58(),
-    outcome.id.toBase58(),
-    outcome.executorId
-  ]);
-//outcome.id=receipt.id
-  const logs = outcome.logs;
-
-  // for (let i = 0; i < logs.length; i++) {
-  //   logsArray.push(logs[i]);
-  // }
-    log.warning("Outcome logs array : {}", [logs.join("|||||||||")]);
-  const receiptIds = outcome.receiptIds;
-  for (let i = 0; i < receiptIds.length; i++) {
-    receiptIdsArray.push(receiptIds[i].toBase58())
-   
-  }
- log.warning("Outcome receiptIds: {}", [receiptIdsArray.join("|||||||||")]);
-  log.warning("****************** Receipt ID {} End ***********************", [receipt.id.toBase58()]);
+    }
 }

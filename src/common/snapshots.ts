@@ -5,7 +5,9 @@
 // 9. MarketDailySnapshot
 // 10. MarketHourlySnapshot
 
-export function updateOrCreateDailyUsageMetrics(): void{ }
+export function updateOrCreateDailyUsageMetrics(): void{ 
+    
+}
 export function updateOrCreateHourlyDailyUsageMetrics(): void{ }
 export function updateOrCreateFinancialDailySnapshot(): void{ }
 export function updateOrCreateMarketDailySnapsot(): void { }

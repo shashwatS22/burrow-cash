@@ -2687,21 +2687,99 @@ export class Account extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get healthScore(): BigInt | null {
+  get healthScore(): BigDecimal | null {
     let value = this.get("healthScore");
     if (!value || value.kind == ValueKind.NULL) {
       return null;
     } else {
-      return value.toBigInt();
+      return value.toBigDecimal();
     }
   }
 
-  set healthScore(value: BigInt | null) {
+  set healthScore(value: BigDecimal | null) {
     if (!value) {
       this.unset("healthScore");
     } else {
-      this.set("healthScore", Value.fromBigInt(<BigInt>value));
+      this.set("healthScore", Value.fromBigDecimal(<BigDecimal>value));
     }
+  }
+
+  get supplied(): Array<string> | null {
+    let value = this.get("supplied");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set supplied(value: Array<string> | null) {
+    if (!value) {
+      this.unset("supplied");
+    } else {
+      this.set("supplied", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+
+  get collateral(): Array<string> | null {
+    let value = this.get("collateral");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set collateral(value: Array<string> | null) {
+    if (!value) {
+      this.unset("collateral");
+    } else {
+      this.set("collateral", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+
+  get borrowed(): Array<string> | null {
+    let value = this.get("borrowed");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toStringArray();
+    }
+  }
+
+  set borrowed(value: Array<string> | null) {
+    if (!value) {
+      this.unset("borrowed");
+    } else {
+      this.set("borrowed", Value.fromStringArray(<Array<string>>value));
+    }
+  }
+
+  get totalSupplied(): BigInt {
+    let value = this.get("totalSupplied");
+    return value!.toBigInt();
+  }
+
+  set totalSupplied(value: BigInt) {
+    this.set("totalSupplied", Value.fromBigInt(value));
+  }
+
+  get totalBorrowed(): BigInt {
+    let value = this.get("totalBorrowed");
+    return value!.toBigInt();
+  }
+
+  set totalBorrowed(value: BigInt) {
+    this.set("totalBorrowed", Value.fromBigInt(value));
+  }
+
+  get totalCollateral(): BigInt {
+    let value = this.get("totalCollateral");
+    return value!.toBigInt();
+  }
+
+  set totalCollateral(value: BigInt) {
+    this.set("totalCollateral", Value.fromBigInt(value));
   }
 }
 
@@ -2734,5 +2812,236 @@ export class ActiveAccount extends Entity {
 
   set id(value: string) {
     this.set("id", Value.fromString(value));
+  }
+}
+
+export class Supplied extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Supplied entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Supplied must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Supplied", id.toString(), this);
+    }
+  }
+
+  static load(id: string): Supplied | null {
+    return changetype<Supplied | null>(store.get("Supplied", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get account(): string {
+    let value = this.get("account");
+    return value!.toString();
+  }
+
+  set account(value: string) {
+    this.set("account", Value.fromString(value));
+  }
+
+  get token(): string {
+    let value = this.get("token");
+    return value!.toString();
+  }
+
+  set token(value: string) {
+    this.set("token", Value.fromString(value));
+  }
+
+  get balance(): BigInt {
+    let value = this.get("balance");
+    return value!.toBigInt();
+  }
+
+  set balance(value: BigInt) {
+    this.set("balance", Value.fromBigInt(value));
+  }
+
+  get shares(): BigInt {
+    let value = this.get("shares");
+    return value!.toBigInt();
+  }
+
+  set shares(value: BigInt) {
+    this.set("shares", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+}
+
+export class Collateral extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Collateral entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Collateral must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Collateral", id.toString(), this);
+    }
+  }
+
+  static load(id: string): Collateral | null {
+    return changetype<Collateral | null>(store.get("Collateral", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get account(): string {
+    let value = this.get("account");
+    return value!.toString();
+  }
+
+  set account(value: string) {
+    this.set("account", Value.fromString(value));
+  }
+
+  get token(): string {
+    let value = this.get("token");
+    return value!.toString();
+  }
+
+  set token(value: string) {
+    this.set("token", Value.fromString(value));
+  }
+
+  get balance(): BigInt {
+    let value = this.get("balance");
+    return value!.toBigInt();
+  }
+
+  set balance(value: BigInt) {
+    this.set("balance", Value.fromBigInt(value));
+  }
+
+  get shares(): BigInt {
+    let value = this.get("shares");
+    return value!.toBigInt();
+  }
+
+  set shares(value: BigInt) {
+    this.set("shares", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
+  }
+}
+
+export class Borrowed extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Borrowed entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Borrowed must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Borrowed", id.toString(), this);
+    }
+  }
+
+  static load(id: string): Borrowed | null {
+    return changetype<Borrowed | null>(store.get("Borrowed", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value!.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get account(): string {
+    let value = this.get("account");
+    return value!.toString();
+  }
+
+  set account(value: string) {
+    this.set("account", Value.fromString(value));
+  }
+
+  get balance(): BigInt {
+    let value = this.get("balance");
+    return value!.toBigInt();
+  }
+
+  set balance(value: BigInt) {
+    this.set("balance", Value.fromBigInt(value));
+  }
+
+  get token(): string {
+    let value = this.get("token");
+    return value!.toString();
+  }
+
+  set token(value: string) {
+    this.set("token", Value.fromString(value));
+  }
+
+  get shares(): BigInt {
+    let value = this.get("shares");
+    return value!.toBigInt();
+  }
+
+  set shares(value: BigInt) {
+    this.set("shares", Value.fromBigInt(value));
+  }
+
+  get timestamp(): BigInt {
+    let value = this.get("timestamp");
+    return value!.toBigInt();
+  }
+
+  set timestamp(value: BigInt) {
+    this.set("timestamp", Value.fromBigInt(value));
   }
 }

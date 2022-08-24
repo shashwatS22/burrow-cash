@@ -1,62 +1,42 @@
 
 
-// import { BigInt, log, near,json,JSONValue, BigDecimal } from "@graphprotocol/graph-ts";
+import { BigInt, log, near,json,JSONValue, BigDecimal } from "@graphprotocol/graph-ts";
 
-// import { Borrow, Withdraw, Token, Market } from "../../generated/schema";
-// import { TokenData, TOKENS_CONTRACT_DATA } from "../common/constants";
-// import { ProtocolName, ProtocolType } from "../common/constants";
-// export function createOrEditTokensFromOracle(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block): void{
 
-//   const args = json.fromBytes(functionCallAction.args).toObject();
-//   const data =args.get("data") as JSONValue;
-//   let lastUpdateblockNumber = block.header.height;
-//   let priceData: JSONValue[] = data["prices"];
-//   let tokenContractData:Array<TokenData>= TOKENS_CONTRACT_DATA;
+import { Borrow, Withdraw, Token, Market } from "../../generated/schema";
+import { BIG_DECIMAL_ZERO, BIG_INT_ZERO, TokenData, TOKENS_CONTRACT_DATA } from "../common/constants";
+import { ProtocolName, ProtocolType } from "../common/constants";
+export function createOrEditTokensFromOracle(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block): void{
+
+  const args = json.fromBytes(functionCallAction.args).toObject();
+  const data =(args.get("data") as JSONValue).toObject();
+  let lastUpdateblockNumber = block.header.height;
+  let priceData = (data.get("prices") as JSONValue).toArray();
+  let tokenContractData:Array<TokenData>= TOKENS_CONTRACT_DATA;
   
   
-//   for (let i = 0; i < priceData.length; i++){
-//     let token = Token.load(priceData[i]["asset_id"])
-//     if (!token) {
-//       token = new Token(priceData[i]["asset_id"])
+  for (let i = 0; i < priceData.length; i++){
+    let tokenId = (priceData.at(i).toObject().get("asset_id") as JSONValue).toString();
+    let token = Token.load(tokenId);
+    if (!token) {
+      token = new Token(tokenId);
       
-//     }
-//     if (lastUpdateblockNumber >= token.lastPriceBlockNumber) {
+    }
+    if (BigInt.fromString( lastUpdateblockNumber.toString()) >= (token.lastPriceBlockNumber as BigInt)) {
 
-//       let t = tokenContractData.find((tokenData) => {
-//         return tokenData.id === priceData[i]["asset_id"];
-//       });
-//       token.name = t.name;
-//       token.symbol = t.symbol;
-//       token.decimals = priceData[i]["price"]["decimals"]
-//       token.lastPriceUSD = BigDecimal.fromString((priceData[i]["price"]["multiplier"] / 10000).toString());
-//       token.lastPriceBlockNumber = block.header.height;
-//       token.save();
-//     }
-//   }
+      let t = tokenContractData.filter((tokenData) => {
+        return tokenData.id === tokenId;
+      });
+      token.name = t[0]. name;
+      token.symbol = t[0].symbol;
+      token.decimals = ((priceData.at(i).toObject().get("price")?.toObject().get("decimals") as JSONValue) ).toI64()
+      token.lastPriceUSD = BigDecimal.fromString(((priceData.at(i).toObject().get("price")?.toObject().get("multiplier") as JSONValue) ).toString()).div(BigDecimal.fromString("10000"));//["price"]["multiplier"]
+      token.lastPriceBlockNumber = BigInt.fromU64(block.header.height) ;
+      token.save();
+    }
+  }
 
 
   
-// }
-// export function getOrCreateToken(tokenId: string): Token {
-  
-//   let token = Token.load(tokenId);
-//   let tokenContractData = TOKENS_CONTRACT_DATA;
-//    let t = tokenContractData.find((tokenData) => {
-//         return tokenData.id === tokenId;
-//       });
-  
-//   if (!token) {
-//     token = new Token(tokenId)
-//     token.decimals = 18;
-
-//     token.lastPriceUSD = BigDecimal.fromString("0");
-//     token.lastPriceBlockNumber = BigInt.fromString("0");
-//   }
-
-//   token.name = t.name;
-//   token.symbol = t.symbol;
-//   token.save();
-
-//   return token as Token;  
-// }
-// export function updateOrCreateRewardToken(): void{ }
+}
+export function getOrCreateRewardToken(): void{ }
