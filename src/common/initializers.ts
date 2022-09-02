@@ -1,7 +1,6 @@
 import { JSONValue, near ,json, TypedMap, BigDecimal,BigInt} from "@graphprotocol/graph-ts";
-import { Deposit, InterestRate, Market,Withdraw, Repay, Borrow, Liquidate, Token, Collateral, Borrowed, Account, Supplied,  } from "../../generated/schema";
-import { BIG_DECIMAL_ZERO, BIG_INT_ZERO, ContractAddress, InterestRateSide, InterestRateType, ProtocolName, TOKENS_CONTRACT_DATA } from "./constants";
-
+import { Deposit, InterestRate, Market,Withdraw, Repay, Borrow, Liquidate, Token, Collateral, Borrowed, Account, Supplied, LendingProtocol,  } from "../../generated/schema";
+import { BIG_DECIMAL_ZERO, BIG_INT_ZERO, ContractAddress, InterestRateSide, InterestRateType, ProtocolName, TOKENS_CONTRACT_DATA,ProtocolType } from "./constants";
 
 export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block): Market{
   const args = json.fromBytes(functionCallAction.args).toObject();
@@ -12,7 +11,7 @@ export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, r
   if (!market) {
     market = new Market(tokenId);
   
-    market.protocol = ProtocolName.BURROW;
+    market.protocol = ContractAddress.BURROW_MAIN;
     market.isActive = true;
     market.canBorrowFrom = (args.get("can_borrow") as JSONValue).toBool();
     market.canUseAsCollateral = (args.get("can_use_as_collateral") as JSONValue).toBool();
@@ -183,7 +182,7 @@ export function getOrCreateLiquidate(functionCallAction: near.FunctionCallAction
     
     liquidate.hash = receipt.id.toBase58();
     liquidate.logIndex = index;
-    liquidate.protocol = ProtocolName.BURROW;
+    liquidate.protocol = ContractAddress.BURROW_MAIN;
     liquidate.to = "";
     liquidate.from = "";
     liquidate.blockNumber = BIG_INT_ZERO;
@@ -221,32 +220,110 @@ export function getOrCreateToken(tokenId: string): Token {
   return token as Token;  
 }
 
-export function getOrCreateAccount(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Account{
+export function getOrCreateAccount(eventData:TypedMap<string, JSONValue>): Account{
   let accountId = (eventData.get("account_id") as JSONValue).toString();
 
-  let account = Account.load(accountId) ;
-
-  
+  let account = Account.load(accountId);
+  if (!account) {
+    account = new Account(accountId);
+    account.healthScore = BIG_DECIMAL_ZERO;
+    account.supplied = [];
+    account.borrowed = [];
+    account.collateral = [];
+    account.totalBorrowed = BIG_INT_ZERO;
+    account.totalCollateral = BIG_INT_ZERO;
+    account.totalSupplied = BIG_INT_ZERO;
+  }
   return account as Account;
-  
 }
 
 
 export function getOrCreateCollateral(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Collateral{
-  let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
-  let collateral = Collateral.load(transactionId);
+  let accountId = (eventData.get("account_id") as JSONValue).toString();
+  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+  let collateralId = accountId.concat("-").concat(tokenId);
+  let collateral = Collateral.load(collateralId);
+  if (!collateral) {
+    collateral = new Collateral(collateralId);
+    collateral.account = accountId;
+    collateral.token = tokenId;
+    collateral.balance = BIG_INT_ZERO;
+    collateral.shares = BIG_INT_ZERO;
+    collateral.timestamp = BigInt.fromString((block.header.timestampNanosec/1000).toString());
+    
+  }
   
   return collateral as Collateral;
 }
 
 export function getOrCreateSupplied(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Supplied{
-  let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
-  let supplied = Supplied.load(transactionId);
+  let accountId = (eventData.get("account_id") as JSONValue).toString();
+  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+  let suppliedId = accountId.concat("-").concat(tokenId);
+  let supplied = Supplied.load(suppliedId);
+  if (!supplied) {
+    supplied = new Supplied(suppliedId);
+    supplied.account = accountId;
+    supplied.token = tokenId;
+    supplied.balance = BIG_INT_ZERO;
+    supplied.shares = BIG_INT_ZERO;
+    supplied.timestamp= BigInt.fromString((block.header.timestampNanosec/1000).toString());
+  }
   return supplied as Supplied;
 }
 
 export function getOrCreateBorrowed(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Borrowed{
-  let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
-  let borrowed = Borrowed.load(transactionId);
+  let accountId = (eventData.get("account_id") as JSONValue).toString();
+  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+  let borrowedId = accountId.concat("-").concat(tokenId);
+  let borrowed = Borrowed.load(borrowedId);
+  if (!borrowed) {
+    borrowed = new Borrowed(borrowedId);
+    borrowed.account = accountId;
+    borrowed.token = tokenId;
+    borrowed.balance = BIG_INT_ZERO;
+    borrowed.shares = BIG_INT_ZERO;
+    borrowed.timestamp= BigInt.fromString((block.header.timestampNanosec/1000).toString());
+
+  }
   return borrowed as Borrowed;
+}
+
+export function getOrCreateLendingProtocol(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>):LendingProtocol {
+  let lendingProtocol = LendingProtocol.load(ContractAddress.BURROW_MAIN);
+  if (!lendingProtocol) {
+    lendingProtocol = new LendingProtocol(ContractAddress.BURROW_MAIN);
+    lendingProtocol.name = ProtocolName.BURROW;
+    lendingProtocol.slug = "burrow-v1";
+    lendingProtocol.schemaVersion = "1.0.0";
+    lendingProtocol.subgraphVersion = "1.0.0";
+    lendingProtocol.methodologyVersion = "1.0.0";
+    lendingProtocol.network = "NEAR_MAINNET";
+    lendingProtocol.type = ProtocolType.LENDING;
+    lendingProtocol.lendingType = "";
+    lendingProtocol.riskType = "";
+    lendingProtocol.mintedTokens = [];
+    lendingProtocol.cumulativeUniqueUsers = 0;
+    lendingProtocol.totalValueLockedUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.protocolControlledValueUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeSupplySideRevenueUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeProtocolSideRevenueUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeTotalRevenueUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.totalDepositBalanceUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeDepositUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.totalBorrowBalanceUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeBorrowUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.cumulativeLiquidateUSD = BIG_DECIMAL_ZERO;
+    lendingProtocol.mintedTokenSupplies = [];
+    lendingProtocol.dailyUsageMetrics = [];
+    lendingProtocol.hourlyUsageMetrics = [];
+    lendingProtocol.financialMetrics = [];
+    lendingProtocol.markets = [];
+
+
+  }
+  return lendingProtocol as LendingProtocol;
+}
+export function getOrCreateRewardToken(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>) {
+  
 }

@@ -39,4 +39,3 @@ export function createOrEditTokensFromOracle(functionCallAction: near.FunctionCa
 
   
 }
-export function getOrCreateRewardToken(): void{ }

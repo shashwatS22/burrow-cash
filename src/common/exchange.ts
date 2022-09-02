@@ -7,6 +7,8 @@ import { ContractAddress, ONE_YOCTO, TokenData, TOKENS_CONTRACT_DATA } from "../
 import { ProtocolName, ProtocolType } from "../common/constants";
 import { getOrCreateBorrow, getOrCreateDeposit, getOrCreateLiquidate, getOrCreateMarket, getOrCreateRepay, getOrCreateWithdraw } from "./initializers";
 import { getOrCreateToken } from "./initializers";
+import { updateIntererstRate } from "./market";
+import { updateSnapshots } from "./snapshots";
 export function handleWithdraw(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): void { 
   
   let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
@@ -23,18 +25,23 @@ export function handleWithdraw(functionCallAction: near.FunctionCallAction, rece
     withdraw.blockNumber = BigInt.fromU64(block.header.height);
   
     withdraw.logIndex = index;
-    withdraw.protocol =ProtocolName.BURROW;
+    withdraw.protocol =ContractAddress.BURROW_MAIN;
     withdraw.amountUSD = (asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO);
     withdraw.asset = (eventData.get("token_id") as JSONValue).toString();
     withdraw.market =(eventData.get("token_id") as JSONValue).toString();
     withdraw.save();
-   //TODO update market, interest rate, snapshots
-    
-    let market = Market.load((eventData.get("token_id") as JSONValue).toString());
-    
-    
+ 
+    let market = Market.load((eventData.get("token_id") as JSONValue).toString()) as Market;
 
-      
+    let withdrawsList = market.withdraws as string[];
+    withdrawsList.push(withdraw.id);
+
+    market.withdraws = withdrawsList;
+    market.inputTokenBalance = market.inputTokenBalance.minus(BigInt.fromString((eventData.get("amount") as JSONValue).toString()));
+    market.totalDepositBalanceUSD = market.totalBorrowBalanceUSD.minus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+    updateIntererstRate(functionCallAction, receipt, outcome, block,  eventObject, index,eventData);
+    market.save();
+    updateSnapshots(functionCallAction, receipt, outcome, block, eventObject, index, eventData);
   
 }
 export function handleRepay(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): void  { 
@@ -42,11 +49,9 @@ export function handleRepay(functionCallAction: near.FunctionCallAction, receipt
     let repay = getOrCreateRepay(functionCallAction,receipt,outcome,block,eventObject,index,eventData);
    let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
   
-    
-   
     repay.hash =receipt.id.toBase58();
     repay.logIndex = index;
-    repay.protocol = ProtocolName.BURROW;
+    repay.protocol = ContractAddress.BURROW_MAIN;
     repay.to = ContractAddress.BURROW_MAIN;
     repay.from = (eventData.get("account_id") as JSONValue).toString();
     repay.blockNumber =BigInt.fromString (block.header.height.toString());
@@ -56,6 +61,28 @@ export function handleRepay(functionCallAction: near.FunctionCallAction, receipt
     repay.amount = BigInt.fromString((eventData.get("amount") as JSONValue).toString());
     repay.amountUSD =  (asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO);
     repay.save();
+        //inputTokenBalance: BigInt!
+//cumulativeLiquidateUSD: BigDecimal!
+    // cumulativeBorrowUSD: BigDecimal!
+    //  totalBorrowBalanceUSD: BigDecimal!
+    //cumulativeDepositUSD: BigDecimal!
+    //totalDepositBalanceUSD: BigDecimal!
+    //totalValueLockedUSD: BigDecimal!
+    //rates: [InterestRate!]!
+    let market = Market.load((eventData.get("token_id") as JSONValue).toString()) as Market;
+    let repaysList = market.repays as string[];
+    repaysList.push(repay.id);
+    market.repays = repaysList;
+    market.inputTokenBalance = market.inputTokenBalance.plus(BigInt.fromString((eventData.get("amount") as JSONValue).toString()));
+    market.totalDepositBalanceUSD = market.totalBorrowBalanceUSD.plus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+//TODO calculate and add interest to reserved supplied and total balance
+
+    updateIntererstRate(functionCallAction, receipt, outcome, block,  eventObject, index,eventData);
+    market.save();
+
+
+
+
 
 }
 export function handleLiquidate(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): void  { 
@@ -64,16 +91,16 @@ export function handleLiquidate(functionCallAction: near.FunctionCallAction, rec
   
     liquidate.hash = receipt.id.toBase58();
     liquidate.logIndex = index;
-    liquidate.protocol = ProtocolName.BURROW;
+    liquidate.protocol = ContractAddress.BURROW_MAIN;
     liquidate.to = "";
     liquidate.from = "";
     liquidate.blockNumber =BigInt.fromString (block.header.height.toString());
     liquidate.timestamp = BigInt.fromString(block.header.timestampNanosec.toString());
     liquidate.market = "";
     liquidate.asset = "";
-    // liquidate.amount = "";
+    liquidate.amount = "";
     liquidate.amountUSD =  (asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO);
-    // liquidate.profitUSD = "";
+    liquidate.profitUSD = "";
     liquidate.save();
     // &account_id,
     //         &liquidation_account_id,
@@ -88,7 +115,7 @@ export function handleDeposit(functionCallAction: near.FunctionCallAction, recei
     let deposit = getOrCreateDeposit(functionCallAction, receipt, outcome, block, eventObject, index, eventData);
     deposit.hash = receipt.id.toBase58();
     deposit.logIndex = index;
-    deposit.protocol = ProtocolName.BURROW;
+    deposit.protocol = ContractAddress.BURROW_MAIN;
     deposit.to = ContractAddress.BURROW_MAIN;
     deposit.from = (eventData.get("account_id") as JSONValue).toString();
     deposit.blockNumber =BigInt.fromString (block.header.height.toString());
@@ -99,7 +126,18 @@ export function handleDeposit(functionCallAction: near.FunctionCallAction, recei
     deposit.amountUSD = (asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO);
 
     deposit.save();
-
+    let market = Market.load((eventData.get("token_id") as JSONValue).toString()) as Market;
+    let depositsList = market.repays as string[];
+    depositsList.push(deposit.id);
+    market.deposits = depositsList;
+    market.inputTokenBalance = market.inputTokenBalance.plus(BigInt.fromString((eventData.get("amount") as JSONValue).toString()));
+    updateIntererstRate(functionCallAction, receipt, outcome, block,  eventObject, index,eventData);
+  
+    market.totalDepositBalanceUSD = market.totalDepositBalanceUSD.plus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+    market.cumulativeDepositUSD = market.cumulativeDepositUSD.plus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+      
+    market.save();
+    updateSnapshots(functionCallAction, receipt, outcome, block, eventObject, index, eventData);
 
  }
 export function handleBorrow(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): void {
@@ -109,16 +147,26 @@ export function handleBorrow(functionCallAction: near.FunctionCallAction, receip
     let borrow = getOrCreateBorrow(functionCallAction, receipt, outcome, block, eventObject, index, eventData);
     borrow.hash = receipt.id.toBase58();
     borrow.logIndex = index;
-    borrow.protocol = ProtocolName.BURROW;
+    borrow.protocol = ContractAddress.BURROW_MAIN;
     borrow.to = (eventData.get("account_id") as JSONValue).toString();
     borrow.from = ContractAddress.BURROW_MAIN;
-     borrow.blockNumber =BigInt.fromString (block.header.height.toString());
+    borrow.blockNumber =BigInt.fromString (block.header.height.toString());
     borrow.timestamp = BigInt.fromString(block.header.timestampNanosec.toString());
     borrow.market = (eventData.get("token_id") as JSONValue).toString();
     borrow.asset = (eventData.get("token_id") as JSONValue).toString();
     borrow.amount = BigInt.fromString((eventData.get("amount") as JSONValue).toString());;
     borrow.amountUSD = (asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO);
     borrow.save();
+    let market = Market.load((eventData.get("token_id") as JSONValue).toString()) as Market;
+    let borrowsList = market.repays as string[];
+    borrowsList.push(borrow.id);
+    market.repays = borrowsList;
+    market.cumulativeBorrowUSD = market.cumulativeBorrowUSD.plus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+    market.totalBorrowBalanceUSD = market.totalBorrowBalanceUSD.plus((asset.lastPriceUSD as BigDecimal).times(BigDecimal.fromString((eventData.get("amount") as JSONValue).toString())).times(ONE_YOCTO));
+    market.inputTokenBalance = market.inputTokenBalance.minus(BigInt.fromString((eventData.get("amount") as JSONValue).toString()));
+    updateIntererstRate(functionCallAction, receipt, outcome, block,  eventObject, index,eventData);
+    market.save();
+    updateSnapshots(functionCallAction, receipt, outcome, block, eventObject, index, eventData);
 
 }
 

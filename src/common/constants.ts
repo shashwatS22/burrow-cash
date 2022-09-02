@@ -64,69 +64,7 @@ export namespace ContractAddress{
 export const BIG_INT_ZERO = BigInt.fromString("0");
 export const BIG_DECIMAL_ZERO = BigDecimal.fromString("0");
 export const ONE_YOCTO = BigDecimal.fromString("0.000000000000000000000001");
-// export const TOKENS_CONTRACT_DATA = [
-//     {
-//         "wrap.near": {
-//             "name": "Wrapped NEAR fungible token",
-//             "symbol": "wNEAR"
-//         }
-//     },
-//     {
-//         "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2.factory.bridge.near": {
-//             "name": "Wrapped Ether",
-//             "symbol": "WETH"
-//         },
-//     },
-//         {
-//         "dac17f958d2ee523a2206206994597c13d831ec7.factory.bridge.near":
-//         {
-//             "name": "Tether USD",
-//             "symbol": "USDT"
-//         }
-//     },
-//         {
-//             "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near": {
-//                 "name": "USD Coin",
-//                 "symbol": "USDC"
-//             },
 
-//     },
-//     {
-            
-//      "6b175474e89094c44da98b954eedeac495271d0f.factory.bridge.near":{
-//     "name": "Dai Stablecoin",
-//     "symbol": "DAI"
-//         },
-//     },
-//     {
-//         "aurora": {
-//             "name": "Ether",
-//             "symbol": "ETH"
-//         },
-//     },
-//     {
-//         "meta-pool.near":
-//         {
-//             "name": "Staked NEAR",
-//             "symbol": "STNEAR"
-//         }
-//     },
-//     {
-//         "2260fac5e5542a773aa44fbcfedf7c193bc2c599.factory.bridge.near":
-//         {
-//             "name": "Wrapped BTC",
-//             "symbol": "WBTC"
-//         },
-//     },
-//     {
-//         "usn": {
-//             "name": "USN",
-//             "symbol": "USN"
-//         }
-// }
-
-
-// ];
 export interface TokenData{
   id: string,
   name: string,
