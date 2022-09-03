@@ -59,21 +59,21 @@ function handleFunctionCall(functionCallAction: near.FunctionCallAction, receipt
   }
   
    
-  // if (functionCallAction.methodName == "add_asset") { 
-  //  getOrCreateMarket(functionCallAction, block);
-  // }
-  // if (functionCallAction.methodName == "oracle_on_call") {
-  //       log.warning("oracle_on_call", []);
-  //       for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
+  if (functionCallAction.methodName == "add_asset") { 
+   getOrCreateMarket(functionCallAction, block);
+  }
+  if (functionCallAction.methodName == "oracle_on_call") {
+        log.warning("oracle_on_call", []);
+        for (let logIndex = 0; logIndex < outcome.logs.length; logIndex++) {
 
-  //         createOrEditTokensFromOracle(functionCallAction, receipt, outcome, block);
+          createOrEditTokensFromOracle(functionCallAction, receipt, outcome, block);
 
-  //       }
-  //    }
+        }
+     }
   
-  // if (functionCallAction.methodName == "add_asset_farm_reward") { 
-  //   updateMarketFromAddAssetFarmAward(functionCallAction, receipt, outcome, block);
-  //   }
+  if (functionCallAction.methodName == "add_asset_farm_reward") { 
+    updateMarketFromAddAssetFarmAward(functionCallAction, receipt, outcome, block);
+    }
     
     
 }
@@ -81,50 +81,50 @@ function handleFunctionCall(functionCallAction: near.FunctionCallAction, receipt
 
 function handleEvents(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block,eventName:JSONValue,logIndex:number,eventData:TypedMap<string, JSONValue>): void {
    switch (eventName.toString()) {
-      // case "deposit":
-      //   {
+      case "deposit":
+        {
           
-      //     handleDeposit(
-      //      functionCallAction,  receipt,  outcome,  block,logIndex,eventData);
-      //     break;
-      //   }
-    //   case "withdraw_succeeded": {
-    //     handleWithdraw(
-    //        functionCallAction,  receipt,  outcome,  block,logIndex,eventData);
-    //   }
-    //   case "repay": {
-    //     handleRepay(
-    //       functionCallAction, receipt, outcome, block, logIndex,eventData);
-    //     break;
+          handleDeposit(
+           functionCallAction,  receipt,  outcome,  block,logIndex,eventData);
+          break;
+        }
+      case "withdraw_succeeded": {
+        handleWithdraw(
+           functionCallAction,  receipt,  outcome,  block,logIndex,eventData);
+      }
+      case "repay": {
+        handleRepay(
+          functionCallAction, receipt, outcome, block, logIndex,eventData);
+        break;
         
-    //   }
-    //      case "liquidate": {
-    //     handleLiquidate(
-    //       functionCallAction, receipt, outcome, block, logIndex,eventData);
-    //     break;
-    //   }
-    //   case "borrow": {
-    //     handleBorrow(
-    //       functionCallAction, receipt, outcome, block, logIndex,eventData);
-    //     break;
+      }
+         case "liquidate": {
+        handleLiquidate(
+          functionCallAction, receipt, outcome, block, logIndex,eventData);
+        break;
+      }
+      case "borrow": {
+        handleBorrow(
+          functionCallAction, receipt, outcome, block, logIndex,eventData);
+        break;
         
-    //  }
-    //  case "deposit_to_reserve":{
-    //    handleDepositToReserve(functionCallAction, receipt, outcome, block, logIndex,eventData);
-    //    break;
-    //    }
-    //  case "increase_collateral": { 
-    //    handleIncreaseCollateral(functionCallAction, receipt, outcome, block, logIndex, eventData);
+     }
+     case "deposit_to_reserve":{
+       handleDepositToReserve(functionCallAction, receipt, outcome, block, logIndex,eventData);
+       break;
+       }
+     case "increase_collateral": { 
+       handleIncreaseCollateral(functionCallAction, receipt, outcome, block, logIndex, eventData);
 
-    //    break;
-    //  }
-    //  case "decrease_collateral": { 
-    //    handleDecreaseCollateral(functionCallAction, receipt, outcome, block, logIndex, eventData);
-    //    break;
-    //    }
-    //  case "force_close": { 
-    //    handleForceClose(functionCallAction, receipt, outcome, block,  logIndex, eventData);
-    //    break;
-    //    }
+       break;
+     }
+     case "decrease_collateral": { 
+       handleDecreaseCollateral(functionCallAction, receipt, outcome, block, logIndex, eventData);
+       break;
+       }
+     case "force_close": { 
+       handleForceClose(functionCallAction, receipt, outcome, block,  logIndex, eventData);
+       break;
+       }
     }
 }
