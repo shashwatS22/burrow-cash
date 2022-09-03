@@ -1,13 +1,15 @@
 import { JSONValue, near ,json, TypedMap, BigDecimal,BigInt} from "@graphprotocol/graph-ts";
-import { Deposit, InterestRate, Market,Withdraw, Repay, Borrow, Liquidate, Token, Collateral, Borrowed, Account, Supplied, LendingProtocol,  } from "../../generated/schema";
+import { Deposit, InterestRate, Market,Withdraw, Repay, Borrow, Liquidate, Token, Collateral, Borrowed, Account, Supplied, LendingProtocol, RewardToken,  } from "../../generated/schema";
 import { BIG_DECIMAL_ZERO, BIG_INT_ZERO, ContractAddress, InterestRateSide, InterestRateType, ProtocolName, TOKENS_CONTRACT_DATA,ProtocolType } from "./constants";
 
-export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block): Market{
+export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, block: near.Block, marketId?:string): Market{
   const args = json.fromBytes(functionCallAction.args).toObject();
-  const config = (args.get("asset_config") as JSONValue).toObject();
+  // const config = (args.get("asset_config") as JSONValue).toObject();
   const tokenId = (args.get("token_id") as JSONValue).toString();
 
   let market = Market.load(tokenId);
+  let interestRate = getOrCreateInterestRate(tokenId);
+
   if (!market) {
     market = new Market(tokenId);
   
@@ -21,18 +23,18 @@ export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, r
     market.inputToken = tokenId;
     market.outputToken = null;
     market.rewardTokens = [];
-    market.rates = [];//interest rates
-    market.totalValueLockedUSD = BIG_DECIMAL_ZERO;
-    market.totalDepositBalanceUSD = BIG_DECIMAL_ZERO;
-    market.cumulativeDepositUSD = BIG_DECIMAL_ZERO;
-    market.totalBorrowBalanceUSD = BIG_DECIMAL_ZERO;
-    market.cumulativeBorrowUSD = BIG_DECIMAL_ZERO;
-    market.cumulativeLiquidateUSD = BIG_DECIMAL_ZERO;
-    market.inputTokenBalance = BIG_INT_ZERO;
-    market.inputTokenPriceUSD= BIG_DECIMAL_ZERO;
-    market.outputTokenSupply= BIG_INT_ZERO;
-    market.outputTokenPriceUSD= BIG_DECIMAL_ZERO;
-    market.exchangeRate= BIG_DECIMAL_ZERO;
+    market.rates.push(interestRate.id);
+    market.totalValueLockedUSD = BIG_DECIMAL_ZERO;//event
+    market.totalDepositBalanceUSD = BIG_DECIMAL_ZERO;//event
+    market.cumulativeDepositUSD = BIG_DECIMAL_ZERO;//event
+    market.totalBorrowBalanceUSD = BIG_DECIMAL_ZERO;//event
+    market.cumulativeBorrowUSD = BIG_DECIMAL_ZERO;//event
+    market.cumulativeLiquidateUSD = BIG_DECIMAL_ZERO;//event
+    market.inputTokenBalance = BIG_INT_ZERO;//event
+    market.inputTokenPriceUSD= BIG_DECIMAL_ZERO;//event
+    market.outputTokenSupply= BIG_INT_ZERO;//event
+    market.outputTokenPriceUSD= BIG_DECIMAL_ZERO;//event
+    market.exchangeRate= BIG_DECIMAL_ZERO;//event
     market.rewardTokenEmissionsAmount = [];
     market.rewardTokenEmissionsUSD = [];
     market.createdTimestamp = BigInt.fromU64(block.header.timestampNanosec / 1000);
@@ -51,10 +53,8 @@ export function getOrCreateMarket(functionCallAction: near.FunctionCallAction, r
   return market as Market;
 }
 
-export function getOrCreateInterestRate(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block): InterestRate {
-  const args = json.fromBytes(functionCallAction.args).toObject();
-  const config = (args.get("asset_config") as JSONValue).toObject();
-  const tokenId = (args.get("token_id") as JSONValue).toString();
+export function getOrCreateInterestRate(tokenId:string): InterestRate {
+ 
   const interestId = InterestRateSide.BORROWER + "-" + InterestRateType.STABLE + tokenId;// TODO add variable interest rate side 
     let interestRate = InterestRate.load(interestId);
   if (!interestRate) {
@@ -69,7 +69,7 @@ export function getOrCreateInterestRate(functionCallAction: near.FunctionCallAct
     return interestRate as InterestRate;
 }
 
-export function getOrCreateRepay(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Repay{
+export function getOrCreateRepay( receipt: near.ActionReceipt,index: number,eventData:TypedMap<string, JSONValue>): Repay{
    let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
     let repay = Repay.load(transactionId);
    let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
@@ -95,7 +95,7 @@ export function getOrCreateRepay(functionCallAction: near.FunctionCallAction, re
   return repay as Repay;
 }
 
-export function getOrCreateWithdraw(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Withdraw{
+export function getOrCreateWithdraw( receipt: near.ActionReceipt,   index: number,eventData:TypedMap<string, JSONValue>): Withdraw{
   let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
   let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
   
@@ -123,7 +123,7 @@ export function getOrCreateWithdraw(functionCallAction: near.FunctionCallAction,
 
 }
 
-export function getOrCreateDeposit(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Deposit{
+export function getOrCreateDeposit( receipt: near.ActionReceipt,  block: near.Block, index: number,eventData:TypedMap<string, JSONValue>): Deposit{
   let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
  let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
   
@@ -148,7 +148,7 @@ export function getOrCreateDeposit(functionCallAction: near.FunctionCallAction, 
   return deposit as Deposit;
 }
 
-export function getOrCreateBorrow(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Borrow{
+export function getOrCreateBorrow( receipt: near.ActionReceipt,  index: number,eventData:TypedMap<string, JSONValue>): Borrow{
    let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
  let asset:Token = getOrCreateToken((eventData.get("token_id") as JSONValue).toString());
  
@@ -172,7 +172,7 @@ export function getOrCreateBorrow(functionCallAction: near.FunctionCallAction, r
   return borrow as Borrow;
 }
 
-export function getOrCreateLiquidate(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Liquidate{
+export function getOrCreateLiquidate( receipt: near.ActionReceipt,  index: number,eventData:TypedMap<string, JSONValue>): Liquidate{
    let transactionId = receipt.id.toBase58().concat("-").concat(index.toString());
     let liquidate = Liquidate.load(transactionId);
  
@@ -220,9 +220,8 @@ export function getOrCreateToken(tokenId: string): Token {
   return token as Token;  
 }
 
-export function getOrCreateAccount(eventData:TypedMap<string, JSONValue>): Account{
-  let accountId = (eventData.get("account_id") as JSONValue).toString();
-
+export function getOrCreateAccount(accountId:string): Account{
+  
   let account = Account.load(accountId);
   if (!account) {
     account = new Account(accountId);
@@ -230,17 +229,13 @@ export function getOrCreateAccount(eventData:TypedMap<string, JSONValue>): Accou
     account.supplied = [];
     account.borrowed = [];
     account.collateral = [];
-    account.totalBorrowed = BIG_INT_ZERO;
-    account.totalCollateral = BIG_INT_ZERO;
-    account.totalSupplied = BIG_INT_ZERO;
   }
   return account as Account;
 }
 
 
-export function getOrCreateCollateral(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Collateral{
-  let accountId = (eventData.get("account_id") as JSONValue).toString();
-  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+export function getOrCreateCollateral(accountId:string, tokenId:string): Collateral{
+  
   let collateralId = accountId.concat("-").concat(tokenId);
   let collateral = Collateral.load(collateralId);
   if (!collateral) {
@@ -249,16 +244,13 @@ export function getOrCreateCollateral(functionCallAction: near.FunctionCallActio
     collateral.token = tokenId;
     collateral.balance = BIG_INT_ZERO;
     collateral.shares = BIG_INT_ZERO;
-    collateral.timestamp = BigInt.fromString((block.header.timestampNanosec/1000).toString());
     
   }
   
   return collateral as Collateral;
 }
 
-export function getOrCreateSupplied(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Supplied{
-  let accountId = (eventData.get("account_id") as JSONValue).toString();
-  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+export function getOrCreateSupplied(accountId:string, tokenId:string): Supplied{
   let suppliedId = accountId.concat("-").concat(tokenId);
   let supplied = Supplied.load(suppliedId);
   if (!supplied) {
@@ -267,14 +259,12 @@ export function getOrCreateSupplied(functionCallAction: near.FunctionCallAction,
     supplied.token = tokenId;
     supplied.balance = BIG_INT_ZERO;
     supplied.shares = BIG_INT_ZERO;
-    supplied.timestamp= BigInt.fromString((block.header.timestampNanosec/1000).toString());
   }
   return supplied as Supplied;
 }
 
-export function getOrCreateBorrowed(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>): Borrowed{
-  let accountId = (eventData.get("account_id") as JSONValue).toString();
-  let tokenId = (eventData.get("token_id") as JSONValue).toString();
+export function getOrCreateBorrowed(accountId:string, tokenId:string): Borrowed{
+  
   let borrowedId = accountId.concat("-").concat(tokenId);
   let borrowed = Borrowed.load(borrowedId);
   if (!borrowed) {
@@ -283,13 +273,12 @@ export function getOrCreateBorrowed(functionCallAction: near.FunctionCallAction,
     borrowed.token = tokenId;
     borrowed.balance = BIG_INT_ZERO;
     borrowed.shares = BIG_INT_ZERO;
-    borrowed.timestamp= BigInt.fromString((block.header.timestampNanosec/1000).toString());
-
+    
   }
   return borrowed as Borrowed;
 }
 
-export function getOrCreateLendingProtocol(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>):LendingProtocol {
+export function getOrCreateLendingProtocol():LendingProtocol {
   let lendingProtocol = LendingProtocol.load(ContractAddress.BURROW_MAIN);
   if (!lendingProtocol) {
     lendingProtocol = new LendingProtocol(ContractAddress.BURROW_MAIN);
@@ -319,11 +308,20 @@ export function getOrCreateLendingProtocol(functionCallAction: near.FunctionCall
     lendingProtocol.hourlyUsageMetrics = [];
     lendingProtocol.financialMetrics = [];
     lendingProtocol.markets = [];
-
+    lendingProtocol.save();
 
   }
   return lendingProtocol as LendingProtocol;
 }
-export function getOrCreateRewardToken(functionCallAction: near.FunctionCallAction, receipt: near.ActionReceipt, outcome: near.ExecutionOutcome, block: near.Block, eventObject: Object, index: number,eventData:TypedMap<string, JSONValue>) {
-  
+export function getOrCreateRewardToken(rewardTokenAddress:string):RewardToken {
+ let rewardTokenId ="POOLED".concat(rewardTokenAddress)
+  let rewardToken = RewardToken.load(rewardTokenId);
+
+  if (!rewardToken) {
+    rewardToken = new RewardToken(rewardTokenId);
+    rewardToken.token = rewardTokenAddress;
+    rewardToken.type = "POOLED";
+  }
+  return rewardToken as RewardToken;
+
 }

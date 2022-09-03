@@ -2754,33 +2754,6 @@ export class Account extends Entity {
       this.set("borrowed", Value.fromStringArray(<Array<string>>value));
     }
   }
-
-  get totalSupplied(): BigInt {
-    let value = this.get("totalSupplied");
-    return value!.toBigInt();
-  }
-
-  set totalSupplied(value: BigInt) {
-    this.set("totalSupplied", Value.fromBigInt(value));
-  }
-
-  get totalBorrowed(): BigInt {
-    let value = this.get("totalBorrowed");
-    return value!.toBigInt();
-  }
-
-  set totalBorrowed(value: BigInt) {
-    this.set("totalBorrowed", Value.fromBigInt(value));
-  }
-
-  get totalCollateral(): BigInt {
-    let value = this.get("totalCollateral");
-    return value!.toBigInt();
-  }
-
-  set totalCollateral(value: BigInt) {
-    this.set("totalCollateral", Value.fromBigInt(value));
-  }
 }
 
 export class ActiveAccount extends Entity {
@@ -2881,15 +2854,6 @@ export class Supplied extends Entity {
   set shares(value: BigInt) {
     this.set("shares", Value.fromBigInt(value));
   }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
 }
 
 export class Collateral extends Entity {
@@ -2958,15 +2922,6 @@ export class Collateral extends Entity {
   set shares(value: BigInt) {
     this.set("shares", Value.fromBigInt(value));
   }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
-  }
 }
 
 export class Borrowed extends Entity {
@@ -3034,14 +2989,5 @@ export class Borrowed extends Entity {
 
   set shares(value: BigInt) {
     this.set("shares", Value.fromBigInt(value));
-  }
-
-  get timestamp(): BigInt {
-    let value = this.get("timestamp");
-    return value!.toBigInt();
-  }
-
-  set timestamp(value: BigInt) {
-    this.set("timestamp", Value.fromBigInt(value));
   }
 }
